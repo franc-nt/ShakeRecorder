@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ShakeRecorder</string>
+    <string name="webhook_url_hint">URL do Webhook</string>
+    <string name="activate_service">Ativar Servico</string>
+    <string name="deactivate_service">Desativar Servico</string>
+    <string name="service_active">Servico ativo - Balance 3x para gravar</string>
+    <string name="service_inactive">Servico inativo</string>
+    <string name="recording">Gravando... Balance 3x para parar</string>
+    <string name="notification_channel_name">ShakeRecorder</string>
+    <string name="notification_channel_desc">Notificacoes do ShakeRecorder</string>
+    <string name="notification_title_active">ShakeRecorder Ativo</string>
+    <string name="notification_title_recording">Gravando...</string>
+    <string name="notification_text_active">Balance o celular 3x para iniciar gravacao</string>
+    <string name="notification_text_recording">Balance o celular 3x para parar</string>
+    <string name="permission_required">Permissao de microfone necessaria</string>
+    <string name="save_settings">Salvar</string>
+    <string name="sound_enabled">Som de bip</string>
+    <string name="sound_description">1 bip ao iniciar, 2 bips ao parar</string>
+    <string name="iniciar">Iniciar</string>
+    <string name="parar">Parar</string>
+    <string name="menu">Menu</string>
+    <string name="configuracoes">Configurações</string>
+    <string name="logs">Logs</string>
+    <string name="gravacoes_recentes">Gravações recentes</string>
+    <string name="sem_gravacoes">Nenhuma gravação encontrada</string>
+
+    <!-- Triggers -->
+    <string name="triggers_section">Gatilhos</string>
+    <string name="shake_trigger">Balançar celular</string>
+    <string name="shake_trigger_desc">Balançar 3x para iniciar/parar</string>
+    <string name="volume_hold_trigger">Segurar Volume+</string>
+    <string name="volume_hold_trigger_desc">Segurar por 3 segundos</string>
+    <string name="volume_triple_trigger">Triplo clique Volume+</string>
+    <string name="volume_triple_trigger_desc">Apertar 3x rápido</string>
+</resources>
