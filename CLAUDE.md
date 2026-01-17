@@ -70,7 +70,7 @@ app/src/main/
 ### IMPORTANTE: Sempre usar o script de build
 
 ```bash
-/mnt/c/Users/Francisco/record/build.sh
+/mnt/c/Users/Francisco/record/ShakeRecorder/build.sh
 ```
 
 O script automaticamente:

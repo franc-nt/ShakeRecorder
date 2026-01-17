@@ -32,11 +32,16 @@
     <!-- Triggers -->
     <string name="triggers_section">GATILHOS</string>
     <string name="shake_trigger">Balançar celular</string>
-    <string name="shake_trigger_desc">Balançar 3x para iniciar/parar</string>
+    <string name="shake_trigger_desc">Balançar para iniciar/parar</string>
     <string name="volume_hold_trigger">Segurar Volume+</string>
-    <string name="volume_hold_trigger_desc">Segurar por 3 segundos</string>
-    <string name="volume_triple_trigger">Triplo clique Volume+</string>
-    <string name="volume_triple_trigger_desc">Apertar 3x rápido</string>
+    <string name="volume_hold_trigger_desc">Segurar para iniciar/parar</string>
+    <string name="volume_triple_trigger">Múltiplos cliques Volume+</string>
+    <string name="volume_triple_trigger_desc">Apertar várias vezes rápido</string>
+
+    <!-- Trigger Config Labels -->
+    <string name="shake_count_label">Quantidade de balançadas:</string>
+    <string name="hold_duration_label">Segundos para segurar:</string>
+    <string name="press_count_label">Quantidade de toques:</string>
 
     <!-- Telegram -->
     <string name="telegram_section">Telegram</string>

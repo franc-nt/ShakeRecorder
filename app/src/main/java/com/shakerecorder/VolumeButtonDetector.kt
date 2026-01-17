@@ -11,13 +11,14 @@ class VolumeButtonDetector(
     private val context: Context,
     private val onTrigger: () -> Unit,
     private val isHoldEnabled: () -> Boolean,
-    private val isTriplePressEnabled: () -> Boolean
+    private val isTriplePressEnabled: () -> Boolean,
+    private val getHoldDurationMs: () -> Long = { 3000L },
+    private val getRequiredPresses: () -> Int = { 3 },
+    private val triplePressWindowMs: Long = 5000L
 ) {
     companion object {
-        private const val HOLD_DURATION_MS = 3000L      // 3 segundos
-        private const val TRIPLE_PRESS_WINDOW_MS = 800L // 800ms para 3 cliques
-        private const val REQUIRED_PRESSES = 3
         private const val TRIGGER_DEBOUNCE_MS = 2000L   // 2 segundos entre triggers
+        private const val MIN_PRESS_INTERVAL_MS = 150L  // Intervalo mínimo entre cliques (filtra auto-repeat)
     }
 
     private var mediaSession: MediaSessionCompat? = null
@@ -69,7 +70,9 @@ class VolumeButtonDetector(
 
     private fun handleVolumeEvent(direction: Int) {
         if (direction == 1) {  // Volume UP
-            if (isTriplePressEnabled()) handleTriplePress()
+            // IMPORTANTE: Só processa triple-press se NÃO estiver em hold detection
+            // Isso evita que eventos de auto-repeat do Android contem como cliques
+            if (isTriplePressEnabled() && !isHolding) handleTriplePress()
             if (isHoldEnabled()) startHoldDetection()
         } else {  // Volume DOWN ou release
             cancelHoldDetection()
@@ -78,15 +81,22 @@ class VolumeButtonDetector(
 
     private fun handleTriplePress() {
         val now = System.currentTimeMillis()
+        val timeSinceLastPress = now - lastPressTime
 
-        if (now - lastPressTime > TRIPLE_PRESS_WINDOW_MS) {
+        // Ignorar eventos de auto-repeat (muito rápidos para ser cliques reais)
+        if (timeSinceLastPress < MIN_PRESS_INTERVAL_MS && lastPressTime > 0) {
+            return
+        }
+
+        // Reset se passou muito tempo desde o último clique
+        if (timeSinceLastPress > triplePressWindowMs) {
             pressCount = 0
         }
 
         pressCount++
         lastPressTime = now
 
-        if (pressCount >= REQUIRED_PRESSES) {
+        if (pressCount >= getRequiredPresses()) {
             pressCount = 0
             cancelHoldDetection()
             triggerWithDebounce()
@@ -103,9 +113,15 @@ class VolumeButtonDetector(
                 holdTriggered = true  // Mark as triggered to prevent repeats
                 pressCount = 0
                 triggerWithDebounce()
+                // Reset estado após debounce para próximo hold funcionar
+                // (VolumeProviderCompat não envia evento de "soltar botão")
+                handler.postDelayed({
+                    isHolding = false
+                    holdTriggered = false
+                }, TRIGGER_DEBOUNCE_MS)
             }
         }
-        handler.postDelayed(holdRunnable!!, HOLD_DURATION_MS)
+        handler.postDelayed(holdRunnable!!, getHoldDurationMs())
     }
 
     private fun cancelHoldDetection() {

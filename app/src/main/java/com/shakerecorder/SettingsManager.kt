@@ -19,6 +19,9 @@ class SettingsManager(context: Context) {
         private const val KEY_TELEGRAM_ENABLED = "telegram_enabled"
         private const val KEY_TELEGRAM_BOT_TOKEN = "telegram_bot_token"
         private const val KEY_TELEGRAM_CHAT_ID = "telegram_chat_id"
+        private const val KEY_SHAKE_COUNT = "shake_count"
+        private const val KEY_VOLUME_HOLD_DURATION = "volume_hold_duration"
+        private const val KEY_VOLUME_PRESS_COUNT = "volume_press_count"
         private const val DEFAULT_WEBHOOK_URL = "https://webhook.site/620bad6b-72ab-43ec-b0c2-a975290d210f"
     }
 
@@ -61,4 +64,16 @@ class SettingsManager(context: Context) {
     var telegramChatId: String
         get() = prefs.getString(KEY_TELEGRAM_CHAT_ID, "") ?: ""
         set(value) = prefs.edit().putString(KEY_TELEGRAM_CHAT_ID, value).apply()
+
+    var shakeCount: Int
+        get() = prefs.getInt(KEY_SHAKE_COUNT, 3)  // Default: 3 balançadas
+        set(value) = prefs.edit().putInt(KEY_SHAKE_COUNT, value).apply()
+
+    var volumeHoldDuration: Int
+        get() = prefs.getInt(KEY_VOLUME_HOLD_DURATION, 3)  // Default: 3 segundos
+        set(value) = prefs.edit().putInt(KEY_VOLUME_HOLD_DURATION, value).apply()
+
+    var volumePressCount: Int
+        get() = prefs.getInt(KEY_VOLUME_PRESS_COUNT, 3)  // Default: 3 toques
+        set(value) = prefs.edit().putInt(KEY_VOLUME_PRESS_COUNT, value).apply()
 }

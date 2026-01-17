@@ -52,6 +52,9 @@ class MainActivity : AppCompatActivity() {
         updateUI()
         loadRecordings()
         checkForCrashLog()
+
+        // Auto-iniciar serviço se estava ativo antes
+        autoStartServiceIfNeeded()
     }
 
     private fun checkForCrashLog() {
@@ -111,18 +114,29 @@ class MainActivity : AppCompatActivity() {
         binding.volumeHoldSwitch.isChecked = settingsManager.isVolumeHoldEnabled
         binding.volumeTripleSwitch.isChecked = settingsManager.isVolumeTriplePressEnabled
 
+        // Setup NumberPickers
+        setupTriggerNumberPickers()
+
+        // Initial visibility based on saved state
+        binding.shakeConfigLayout.visibility = if (settingsManager.isShakeEnabled) View.VISIBLE else View.GONE
+        binding.volumeHoldConfigLayout.visibility = if (settingsManager.isVolumeHoldEnabled) View.VISIBLE else View.GONE
+        binding.volumeTripleConfigLayout.visibility = if (settingsManager.isVolumeTriplePressEnabled) View.VISIBLE else View.GONE
+
         binding.shakeSwitch.setOnCheckedChangeListener { _, isChecked ->
             settingsManager.isShakeEnabled = isChecked
+            binding.shakeConfigLayout.visibility = if (isChecked) View.VISIBLE else View.GONE
             showRestartServiceToast()
         }
 
         binding.volumeHoldSwitch.setOnCheckedChangeListener { _, isChecked ->
             settingsManager.isVolumeHoldEnabled = isChecked
+            binding.volumeHoldConfigLayout.visibility = if (isChecked) View.VISIBLE else View.GONE
             showRestartServiceToast()
         }
 
         binding.volumeTripleSwitch.setOnCheckedChangeListener { _, isChecked ->
             settingsManager.isVolumeTriplePressEnabled = isChecked
+            binding.volumeTripleConfigLayout.visibility = if (isChecked) View.VISIBLE else View.GONE
             showRestartServiceToast()
         }
 
@@ -297,6 +311,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun autoStartServiceIfNeeded() {
+        // Auto-iniciar serviço se estava ativo antes e já tem permissões
+        if (settingsManager.isServiceEnabled && !RecorderService.isRunning) {
+            if (hasRequiredPermissions()) {
+                val intent = Intent(this, RecorderService::class.java)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(intent)
+                } else {
+                    startService(intent)
+                }
+            }
+        }
+    }
+
+    private fun hasRequiredPermissions(): Boolean {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) ==
+               PackageManager.PERMISSION_GRANTED
+    }
+
     private fun updateTelegramFieldsEnabled(enabled: Boolean) {
         binding.telegramTokenInput.isEnabled = enabled
         binding.telegramChatIdInput.isEnabled = enabled
@@ -320,6 +353,44 @@ class MainActivity : AppCompatActivity() {
             } else {
                 content.visibility = View.VISIBLE
                 arrow.setImageResource(R.drawable.ic_expand_less)
+            }
+        }
+    }
+
+    private fun setupTriggerNumberPickers() {
+        // Shake count picker (2-10)
+        binding.shakeCountPicker.apply {
+            minValue = 2
+            maxValue = 10
+            value = settingsManager.shakeCount
+            wrapSelectorWheel = false
+            setOnValueChangedListener { _, _, newVal ->
+                settingsManager.shakeCount = newVal
+                showRestartServiceToast()
+            }
+        }
+
+        // Hold duration picker (1-10 seconds)
+        binding.holdDurationPicker.apply {
+            minValue = 1
+            maxValue = 10
+            value = settingsManager.volumeHoldDuration
+            wrapSelectorWheel = false
+            setOnValueChangedListener { _, _, newVal ->
+                settingsManager.volumeHoldDuration = newVal
+                showRestartServiceToast()
+            }
+        }
+
+        // Press count picker (2-5)
+        binding.pressCountPicker.apply {
+            minValue = 2
+            maxValue = 5
+            value = settingsManager.volumePressCount
+            wrapSelectorWheel = false
+            setOnValueChangedListener { _, _, newVal ->
+                settingsManager.volumePressCount = newVal
+                showRestartServiceToast()
             }
         }
     }

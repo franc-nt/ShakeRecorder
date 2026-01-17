@@ -85,9 +85,10 @@ class RecorderService : Service() {
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-        shakeDetector = ShakeDetector {
-            onShakeDetected()
-        }
+        shakeDetector = ShakeDetector(
+            onShakeDetected = { onShakeDetected() },
+            requiredShakes = settingsManager.shakeCount
+        )
 
         setupToneGenerator()
         createNotificationChannel()
@@ -167,13 +168,16 @@ class RecorderService : Service() {
             context = this,
             onTrigger = { onShakeDetected() },
             isHoldEnabled = { settingsManager.isVolumeHoldEnabled },
-            isTriplePressEnabled = { settingsManager.isVolumeTriplePressEnabled }
+            isTriplePressEnabled = { settingsManager.isVolumeTriplePressEnabled },
+            getHoldDurationMs = { settingsManager.volumeHoldDuration * 1000L },
+            getRequiredPresses = { settingsManager.volumePressCount },
+            triplePressWindowMs = 5000L
         )
         volumeButtonDetector?.start()
 
         val triggers = mutableListOf<String>()
-        if (settingsManager.isVolumeHoldEnabled) triggers.add("segurar 3s")
-        if (settingsManager.isVolumeTriplePressEnabled) triggers.add("3x clique")
+        if (settingsManager.isVolumeHoldEnabled) triggers.add("segurar ${settingsManager.volumeHoldDuration}s")
+        if (settingsManager.isVolumeTriplePressEnabled) triggers.add("${settingsManager.volumePressCount}x clique")
         log("Volume trigger ativo: ${triggers.joinToString(", ")}")
     }
 

@@ -7,14 +7,14 @@ import android.hardware.SensorManager
 import kotlin.math.sqrt
 
 class ShakeDetector(
-    private val onShakeDetected: () -> Unit
+    private val onShakeDetected: () -> Unit,
+    private val requiredShakes: Int = 3
 ) : SensorEventListener {
 
     companion object {
         private const val SHAKE_THRESHOLD_GRAVITY = 2.7f
         private const val SHAKE_SLOP_TIME_MS = 500
         private const val SHAKE_COUNT_RESET_TIME_MS = 2000
-        private const val REQUIRED_SHAKES = 3
     }
 
     private var shakeTimestamp: Long = 0
@@ -47,7 +47,7 @@ class ShakeDetector(
             shakeTimestamp = now
             shakeCount++
 
-            if (shakeCount >= REQUIRED_SHAKES) {
+            if (shakeCount >= requiredShakes) {
                 shakeCount = 0
                 onShakeDetected()
             }
