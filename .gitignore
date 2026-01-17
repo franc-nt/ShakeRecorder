@@ -91,3 +91,6 @@ Thumbs.db
 
 # Kotlin
 *.kotlin_metadata
+
+# SDK (local development)
+sdk/
