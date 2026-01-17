@@ -23,10 +23,18 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 class RecorderService : Service() {
 
@@ -50,6 +58,8 @@ class RecorderService : Service() {
     private lateinit var settingsManager: SettingsManager
     private lateinit var audioRecorder: AudioRecorder
     private lateinit var webhookUploader: WebhookUploader
+    private lateinit var telegramUploader: TelegramUploader
+    private lateinit var uploadQueueManager: UploadQueueManager
     private lateinit var shakeDetector: ShakeDetector
     private var volumeButtonDetector: VolumeButtonDetector? = null
 
@@ -70,6 +80,8 @@ class RecorderService : Service() {
         settingsManager = SettingsManager(this)
         audioRecorder = AudioRecorder(this)
         webhookUploader = WebhookUploader()
+        telegramUploader = TelegramUploader()
+        uploadQueueManager = UploadQueueManager(this)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
@@ -207,20 +219,75 @@ class RecorderService : Service() {
     }
 
     private fun uploadRecording(filePath: String) {
-        val webhookUrl = settingsManager.webhookUrl
-        if (webhookUrl.isBlank()) {
-            log("Webhook URL nao configurada")
-            return
+        // Upload para webhook
+        if (settingsManager.webhookUrl.isNotBlank()) {
+            uploadToDestination(filePath, UploadItem.UploadDestination.WEBHOOK)
         }
 
-        log("Enviando para webhook...")
+        // Upload para Telegram
+        if (settingsManager.isTelegramEnabled &&
+            settingsManager.telegramBotToken.isNotBlank() &&
+            settingsManager.telegramChatId.isNotBlank()) {
+            uploadToDestination(filePath, UploadItem.UploadDestination.TELEGRAM)
+        }
+    }
+
+    private fun uploadToDestination(filePath: String, destination: UploadItem.UploadDestination) {
+        val destName = if (destination == UploadItem.UploadDestination.WEBHOOK) "webhook" else "Telegram"
+        log("Enviando para $destName...")
+
         serviceScope.launch {
-            val result = webhookUploader.uploadFile(filePath, webhookUrl)
+            val result = when (destination) {
+                UploadItem.UploadDestination.WEBHOOK -> {
+                    webhookUploader.uploadFile(filePath, settingsManager.webhookUrl)
+                }
+                UploadItem.UploadDestination.TELEGRAM -> {
+                    telegramUploader.uploadAudio(
+                        filePath,
+                        settingsManager.telegramBotToken,
+                        settingsManager.telegramChatId
+                    )
+                }
+            }
+
             result.fold(
-                onSuccess = { log("Upload concluido!") },
-                onFailure = { log("Erro no upload: ${it.message}") }
+                onSuccess = {
+                    log("Upload $destName concluido!")
+                },
+                onFailure = { error ->
+                    log("Erro no upload $destName: ${error.message}")
+                    log("Adicionando a fila de retry...")
+                    queueForRetry(filePath, destination)
+                }
             )
         }
+    }
+
+    private fun queueForRetry(filePath: String, destination: UploadItem.UploadDestination) {
+        val item = uploadQueueManager.addToQueue(filePath, destination)
+        scheduleRetryWork(item.id)
+    }
+
+    private fun scheduleRetryWork(itemId: String) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val workRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+            .setConstraints(constraints)
+            .setInputData(workDataOf(UploadWorker.KEY_ITEM_ID to itemId))
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                30, TimeUnit.SECONDS
+            )
+            .build()
+
+        WorkManager.getInstance(this)
+            .enqueueUniqueWork(
+                "upload_$itemId",
+                ExistingWorkPolicy.KEEP,
+                workRequest
+            )
     }
 
     private fun vibrate() {

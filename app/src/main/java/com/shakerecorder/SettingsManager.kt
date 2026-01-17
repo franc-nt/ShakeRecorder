@@ -16,6 +16,9 @@ class SettingsManager(context: Context) {
         private const val KEY_SHAKE_ENABLED = "shake_enabled"
         private const val KEY_VOLUME_HOLD_ENABLED = "volume_hold_enabled"
         private const val KEY_VOLUME_TRIPLE_PRESS_ENABLED = "volume_triple_press_enabled"
+        private const val KEY_TELEGRAM_ENABLED = "telegram_enabled"
+        private const val KEY_TELEGRAM_BOT_TOKEN = "telegram_bot_token"
+        private const val KEY_TELEGRAM_CHAT_ID = "telegram_chat_id"
         private const val DEFAULT_WEBHOOK_URL = "https://webhook.site/620bad6b-72ab-43ec-b0c2-a975290d210f"
     }
 
@@ -46,4 +49,16 @@ class SettingsManager(context: Context) {
     var isVolumeTriplePressEnabled: Boolean
         get() = prefs.getBoolean(KEY_VOLUME_TRIPLE_PRESS_ENABLED, false)  // Default: OFF
         set(value) = prefs.edit().putBoolean(KEY_VOLUME_TRIPLE_PRESS_ENABLED, value).apply()
+
+    var isTelegramEnabled: Boolean
+        get() = prefs.getBoolean(KEY_TELEGRAM_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(KEY_TELEGRAM_ENABLED, value).apply()
+
+    var telegramBotToken: String
+        get() = prefs.getString(KEY_TELEGRAM_BOT_TOKEN, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_TELEGRAM_BOT_TOKEN, value).apply()
+
+    var telegramChatId: String
+        get() = prefs.getString(KEY_TELEGRAM_CHAT_ID, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_TELEGRAM_CHAT_ID, value).apply()
 }

@@ -9,6 +9,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.view.Gravity
+import android.view.View
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -70,6 +72,9 @@ class MainActivity : AppCompatActivity() {
         // Show version in drawer
         binding.versionText.text = "ShakeRecorder v${BuildConfig.VERSION_NAME}"
 
+        // Setup expandable sections
+        setupExpandableSections()
+
         // Menu button opens drawer
         binding.menuButton.setOnClickListener {
             binding.drawerLayout.openDrawer(Gravity.END)
@@ -77,14 +82,28 @@ class MainActivity : AppCompatActivity() {
 
         binding.saveButton.setOnClickListener {
             val url = binding.webhookInput.text.toString().trim()
-            if (url.isNotEmpty()) {
-                settingsManager.webhookUrl = url
-                Toast.makeText(this, "Configuracoes salvas", Toast.LENGTH_SHORT).show()
-            }
+            settingsManager.webhookUrl = url
+
+            // Save Telegram settings
+            settingsManager.telegramBotToken = binding.telegramTokenInput.text.toString().trim()
+            settingsManager.telegramChatId = binding.telegramChatIdInput.text.toString().trim()
+
+            Toast.makeText(this, "Configuracoes salvas", Toast.LENGTH_SHORT).show()
         }
 
         binding.soundSwitch.setOnCheckedChangeListener { _, isChecked ->
             settingsManager.isSoundEnabled = isChecked
+        }
+
+        // Telegram settings
+        binding.telegramSwitch.isChecked = settingsManager.isTelegramEnabled
+        binding.telegramTokenInput.setText(settingsManager.telegramBotToken)
+        binding.telegramChatIdInput.setText(settingsManager.telegramChatId)
+        updateTelegramFieldsEnabled(settingsManager.isTelegramEnabled)
+
+        binding.telegramSwitch.setOnCheckedChangeListener { _, isChecked ->
+            settingsManager.isTelegramEnabled = isChecked
+            updateTelegramFieldsEnabled(isChecked)
         }
 
         // Trigger switches
@@ -275,6 +294,33 @@ class MainActivity : AppCompatActivity() {
     private fun showRestartServiceToast() {
         if (RecorderService.isRunning) {
             Toast.makeText(this, "Reinicie o servico para aplicar", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateTelegramFieldsEnabled(enabled: Boolean) {
+        binding.telegramTokenInput.isEnabled = enabled
+        binding.telegramChatIdInput.isEnabled = enabled
+        binding.telegramTokenLayout.alpha = if (enabled) 1.0f else 0.5f
+        binding.telegramChatIdLayout.alpha = if (enabled) 1.0f else 0.5f
+    }
+
+    private fun setupExpandableSections() {
+        setupExpandableSection(binding.envioHeader, binding.envioContent, binding.envioArrow)
+        setupExpandableSection(binding.gatilhosHeader, binding.gatilhosContent, binding.gatilhosArrow)
+        setupExpandableSection(binding.opcoesHeader, binding.opcoesContent, binding.opcoesArrow)
+        setupExpandableSection(binding.logsHeader, binding.logsContent, binding.logsArrow)
+    }
+
+    private fun setupExpandableSection(header: View, content: View, arrow: ImageView) {
+        header.setOnClickListener {
+            val isExpanded = content.visibility == View.VISIBLE
+            if (isExpanded) {
+                content.visibility = View.GONE
+                arrow.setImageResource(R.drawable.ic_expand_more)
+            } else {
+                content.visibility = View.VISIBLE
+                arrow.setImageResource(R.drawable.ic_expand_less)
+            }
         }
     }
 

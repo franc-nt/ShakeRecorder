@@ -11,8 +11,8 @@ android {
         applicationId = "com.shakerecorder"
         minSdk = 26
         targetSdk = 36
-        versionCode = 9
-        versionName = "1.9"
+        versionCode = 12
+        versionName = "1.12"
     }
 
     buildTypes {
@@ -48,4 +48,5 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.media:media:1.7.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 }

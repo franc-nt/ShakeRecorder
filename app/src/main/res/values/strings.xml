@@ -25,12 +25,26 @@
     <string name="gravacoes_recentes">Gravações recentes</string>
     <string name="sem_gravacoes">Nenhuma gravação encontrada</string>
 
+    <!-- Sections -->
+    <string name="envio_section">ENVIO</string>
+    <string name="options_section">OPÇÕES</string>
+
     <!-- Triggers -->
-    <string name="triggers_section">Gatilhos</string>
+    <string name="triggers_section">GATILHOS</string>
     <string name="shake_trigger">Balançar celular</string>
     <string name="shake_trigger_desc">Balançar 3x para iniciar/parar</string>
     <string name="volume_hold_trigger">Segurar Volume+</string>
     <string name="volume_hold_trigger_desc">Segurar por 3 segundos</string>
     <string name="volume_triple_trigger">Triplo clique Volume+</string>
     <string name="volume_triple_trigger_desc">Apertar 3x rápido</string>
+
+    <!-- Telegram -->
+    <string name="telegram_section">Telegram</string>
+    <string name="telegram_enabled">Enviar para Telegram</string>
+    <string name="telegram_enabled_desc">Envia audio para bot do Telegram</string>
+    <string name="telegram_token_hint">Bot Token</string>
+    <string name="telegram_chat_id_hint">Chat ID (usuario ou grupo)</string>
+
+    <!-- Accessibility -->
+    <string name="expand">Expandir</string>
 </resources>
