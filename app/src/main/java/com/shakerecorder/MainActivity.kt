@@ -91,6 +91,17 @@ class MainActivity : AppCompatActivity() {
             settingsManager.telegramBotToken = binding.telegramTokenInput.text.toString().trim()
             settingsManager.telegramChatId = binding.telegramChatIdInput.text.toString().trim()
 
+            // Save Gemini settings
+            settingsManager.geminiApiKey = binding.geminiApiKeyInput.text.toString().trim()
+            settingsManager.geminiModel = binding.geminiModelInput.text.toString().trim()
+            settingsManager.geminiPrompt = binding.geminiPromptInput.text.toString().trim()
+
+            // Save Hermes settings
+            settingsManager.hermesUrl = binding.hermesUrlInput.text.toString().trim()
+            settingsManager.hermesApiKey = binding.hermesApiKeyInput.text.toString().trim()
+            settingsManager.hermesInstructions = binding.hermesInstructionsInput.text.toString().trim()
+            settingsManager.hermesSessionId = binding.hermesSessionIdInput.text.toString().trim()
+
             Toast.makeText(this, "Configuracoes salvas", Toast.LENGTH_SHORT).show()
         }
 
@@ -107,6 +118,31 @@ class MainActivity : AppCompatActivity() {
         binding.telegramSwitch.setOnCheckedChangeListener { _, isChecked ->
             settingsManager.isTelegramEnabled = isChecked
             updateTelegramFieldsEnabled(isChecked)
+        }
+
+        // Gemini settings
+        binding.geminiSwitch.isChecked = settingsManager.isGeminiEnabled
+        binding.geminiApiKeyInput.setText(settingsManager.geminiApiKey)
+        binding.geminiModelInput.setText(settingsManager.geminiModel)
+        binding.geminiPromptInput.setText(settingsManager.geminiPrompt)
+        updateGeminiFieldsEnabled(settingsManager.isGeminiEnabled)
+
+        binding.geminiSwitch.setOnCheckedChangeListener { _, isChecked ->
+            settingsManager.isGeminiEnabled = isChecked
+            updateGeminiFieldsEnabled(isChecked)
+        }
+
+        // Hermes settings
+        binding.hermesSwitch.isChecked = settingsManager.isHermesEnabled
+        binding.hermesUrlInput.setText(settingsManager.hermesUrl)
+        binding.hermesApiKeyInput.setText(settingsManager.hermesApiKey)
+        binding.hermesInstructionsInput.setText(settingsManager.hermesInstructions)
+        binding.hermesSessionIdInput.setText(settingsManager.hermesSessionId)
+        updateHermesFieldsEnabled(settingsManager.isHermesEnabled)
+
+        binding.hermesSwitch.setOnCheckedChangeListener { _, isChecked ->
+            settingsManager.isHermesEnabled = isChecked
+            updateHermesFieldsEnabled(isChecked)
         }
 
         // Trigger switches
@@ -335,6 +371,28 @@ class MainActivity : AppCompatActivity() {
         binding.telegramChatIdInput.isEnabled = enabled
         binding.telegramTokenLayout.alpha = if (enabled) 1.0f else 0.5f
         binding.telegramChatIdLayout.alpha = if (enabled) 1.0f else 0.5f
+    }
+
+    private fun updateGeminiFieldsEnabled(enabled: Boolean) {
+        binding.geminiApiKeyInput.isEnabled = enabled
+        binding.geminiModelInput.isEnabled = enabled
+        binding.geminiPromptInput.isEnabled = enabled
+        val alpha = if (enabled) 1.0f else 0.5f
+        binding.geminiApiKeyLayout.alpha = alpha
+        binding.geminiModelLayout.alpha = alpha
+        binding.geminiPromptLayout.alpha = alpha
+    }
+
+    private fun updateHermesFieldsEnabled(enabled: Boolean) {
+        binding.hermesUrlInput.isEnabled = enabled
+        binding.hermesApiKeyInput.isEnabled = enabled
+        binding.hermesInstructionsInput.isEnabled = enabled
+        binding.hermesSessionIdInput.isEnabled = enabled
+        val alpha = if (enabled) 1.0f else 0.5f
+        binding.hermesUrlLayout.alpha = alpha
+        binding.hermesApiKeyLayout.alpha = alpha
+        binding.hermesInstructionsLayout.alpha = alpha
+        binding.hermesSessionIdLayout.alpha = alpha
     }
 
     private fun setupExpandableSections() {

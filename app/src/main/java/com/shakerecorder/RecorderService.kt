@@ -59,6 +59,8 @@ class RecorderService : Service() {
     private lateinit var audioRecorder: AudioRecorder
     private lateinit var webhookUploader: WebhookUploader
     private lateinit var telegramUploader: TelegramUploader
+    private lateinit var geminiTranscriber: GeminiTranscriber
+    private lateinit var hermesForwarder: HermesForwarder
     private lateinit var uploadQueueManager: UploadQueueManager
     private lateinit var shakeDetector: ShakeDetector
     private var volumeButtonDetector: VolumeButtonDetector? = null
@@ -81,6 +83,8 @@ class RecorderService : Service() {
         audioRecorder = AudioRecorder(this)
         webhookUploader = WebhookUploader()
         telegramUploader = TelegramUploader()
+        geminiTranscriber = GeminiTranscriber()
+        hermesForwarder = HermesForwarder()
         uploadQueueManager = UploadQueueManager(this)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -233,6 +237,62 @@ class RecorderService : Service() {
             settingsManager.telegramBotToken.isNotBlank() &&
             settingsManager.telegramChatId.isNotBlank()) {
             uploadToDestination(filePath, UploadItem.UploadDestination.TELEGRAM)
+        }
+
+        // Transcrever com Gemini + encaminhar pro Hermes
+        if (settingsManager.isGeminiEnabled && settingsManager.geminiApiKey.isNotBlank()) {
+            transcribeAndForward(filePath)
+        }
+    }
+
+    private fun transcribeAndForward(filePath: String) {
+        serviceScope.launch {
+            log("Transcrevendo audio...")
+            val result = geminiTranscriber.transcribe(
+                filePath = filePath,
+                apiKey = settingsManager.geminiApiKey,
+                model = settingsManager.geminiModel,
+                prompt = settingsManager.geminiPrompt
+            )
+
+            result.fold(
+                onSuccess = { transcript ->
+                    log("Transcricao OK (${transcript.length} chars)")
+                    saveTranscriptFile(filePath, transcript)
+
+                    if (settingsManager.isHermesEnabled && settingsManager.hermesUrl.isNotBlank()) {
+                        log("Enviando transcricao pro Hermes...")
+                        val hermesResult = hermesForwarder.forward(
+                            transcript = transcript,
+                            baseUrl = settingsManager.hermesUrl,
+                            apiKey = settingsManager.hermesApiKey,
+                            instructions = settingsManager.hermesInstructions,
+                            sessionId = settingsManager.hermesSessionId
+                        )
+                        hermesResult.fold(
+                            onSuccess = { log("Hermes OK") },
+                            onFailure = { error -> log("Erro Hermes: ${error.message}") }
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    log("Erro transcricao: ${error.message}")
+                }
+            )
+        }
+    }
+
+    private fun saveTranscriptFile(audioPath: String, transcript: String) {
+        try {
+            val txtPath = if (audioPath.endsWith(".m4a", ignoreCase = true)) {
+                audioPath.substring(0, audioPath.length - 4) + ".txt"
+            } else {
+                "$audioPath.txt"
+            }
+            java.io.File(txtPath).writeText(transcript, Charsets.UTF_8)
+            log("Transcricao salva: ${txtPath.substringAfterLast("/")}")
+        } catch (e: Exception) {
+            log("Erro ao salvar .txt: ${e.message}")
         }
     }
 

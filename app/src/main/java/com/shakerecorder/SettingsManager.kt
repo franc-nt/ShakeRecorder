@@ -22,7 +22,18 @@ class SettingsManager(context: Context) {
         private const val KEY_SHAKE_COUNT = "shake_count"
         private const val KEY_VOLUME_HOLD_DURATION = "volume_hold_duration"
         private const val KEY_VOLUME_PRESS_COUNT = "volume_press_count"
+        private const val KEY_GEMINI_ENABLED = "gemini_enabled"
+        private const val KEY_GEMINI_API_KEY = "gemini_api_key"
+        private const val KEY_GEMINI_MODEL = "gemini_model"
+        private const val KEY_GEMINI_PROMPT = "gemini_prompt"
+        private const val KEY_HERMES_ENABLED = "hermes_enabled"
+        private const val KEY_HERMES_URL = "hermes_url"
+        private const val KEY_HERMES_API_KEY = "hermes_api_key"
+        private const val KEY_HERMES_INSTRUCTIONS = "hermes_instructions"
+        private const val KEY_HERMES_SESSION_ID = "hermes_session_id"
         private const val DEFAULT_WEBHOOK_URL = "https://webhook.site/620bad6b-72ab-43ec-b0c2-a975290d210f"
+        private const val DEFAULT_GEMINI_MODEL = "gemini-3-flash-preview"
+        private const val DEFAULT_GEMINI_PROMPT = "Transcreva este áudio em português brasileiro. Retorne apenas a transcrição literal, sem comentários ou explicações."
     }
 
     var webhookUrl: String
@@ -76,4 +87,40 @@ class SettingsManager(context: Context) {
     var volumePressCount: Int
         get() = prefs.getInt(KEY_VOLUME_PRESS_COUNT, 3)  // Default: 3 toques
         set(value) = prefs.edit().putInt(KEY_VOLUME_PRESS_COUNT, value).apply()
+
+    var isGeminiEnabled: Boolean
+        get() = prefs.getBoolean(KEY_GEMINI_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(KEY_GEMINI_ENABLED, value).apply()
+
+    var geminiApiKey: String
+        get() = prefs.getString(KEY_GEMINI_API_KEY, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_GEMINI_API_KEY, value).apply()
+
+    var geminiModel: String
+        get() = prefs.getString(KEY_GEMINI_MODEL, DEFAULT_GEMINI_MODEL) ?: DEFAULT_GEMINI_MODEL
+        set(value) = prefs.edit().putString(KEY_GEMINI_MODEL, value).apply()
+
+    var geminiPrompt: String
+        get() = prefs.getString(KEY_GEMINI_PROMPT, DEFAULT_GEMINI_PROMPT) ?: DEFAULT_GEMINI_PROMPT
+        set(value) = prefs.edit().putString(KEY_GEMINI_PROMPT, value).apply()
+
+    var isHermesEnabled: Boolean
+        get() = prefs.getBoolean(KEY_HERMES_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(KEY_HERMES_ENABLED, value).apply()
+
+    var hermesUrl: String
+        get() = prefs.getString(KEY_HERMES_URL, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_HERMES_URL, value).apply()
+
+    var hermesApiKey: String
+        get() = prefs.getString(KEY_HERMES_API_KEY, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_HERMES_API_KEY, value).apply()
+
+    var hermesInstructions: String
+        get() = prefs.getString(KEY_HERMES_INSTRUCTIONS, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_HERMES_INSTRUCTIONS, value).apply()
+
+    var hermesSessionId: String
+        get() = prefs.getString(KEY_HERMES_SESSION_ID, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_HERMES_SESSION_ID, value).apply()
 }

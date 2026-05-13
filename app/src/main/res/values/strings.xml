@@ -50,6 +50,21 @@
     <string name="telegram_token_hint">Bot Token</string>
     <string name="telegram_chat_id_hint">Chat ID (usuario ou grupo)</string>
 
+    <!-- Gemini Transcription -->
+    <string name="gemini_enabled">Transcrever com Gemini</string>
+    <string name="gemini_enabled_desc">Google AI Studio transcreve o áudio</string>
+    <string name="gemini_api_key_hint">Chave de API Google AI Studio</string>
+    <string name="gemini_model_hint">Modelo (ex: gemini-3-flash-preview)</string>
+    <string name="gemini_prompt_hint">Prompt de transcrição</string>
+
+    <!-- Hermes -->
+    <string name="hermes_enabled">Enviar transcrição pro Hermes</string>
+    <string name="hermes_enabled_desc">Encaminha o texto transcrito ao Hermes Agent</string>
+    <string name="hermes_url_hint">URL do Hermes (ex: http://192.168.1.10:8642)</string>
+    <string name="hermes_api_key_hint">Chave de API Hermes (opcional)</string>
+    <string name="hermes_instructions_hint">Instruções do agente (opcional)</string>
+    <string name="hermes_session_id_hint">Session ID (opcional, p/ continuidade)</string>
+
     <!-- Accessibility -->
     <string name="expand">Expandir</string>
 </resources>

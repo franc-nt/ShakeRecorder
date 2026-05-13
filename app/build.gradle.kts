@@ -11,8 +11,8 @@ android {
         applicationId = "com.shakerecorder"
         minSdk = 26
         targetSdk = 36
-        versionCode = 17
-        versionName = "1.17"
+        versionCode = 20
+        versionName = "1.20"
     }
 
     buildTypes {
