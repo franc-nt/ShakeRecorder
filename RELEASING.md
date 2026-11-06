@@ -7,6 +7,19 @@ reads the latest published non-prerelease release from the public repository
 ## Signing continuity
 
 Keep the original keystore and back it up securely under the owner's control.
+The same signing key must remain available for every future release. Use durable
+custody at a destination specifically approved by the owner after disclosing the
+storage and access risks; a temporary directory or build workspace is not a
+backup. Do not configure persistent storage or credentials based on this document
+alone, or claim a backup exists without completing and verifying it.
+
+Before starting any new release, confirm the original key is available, verify its
+certificate fingerprint against the pin below, and validate recovery from the
+authorized backup without displaying or logging key material or passwords. If
+the original key or verified recovery is unavailable, stop delivery and report
+the blocker. Never generate a replacement when the original is missing, and never
+deliver an APK signed with a temporary key.
+
 The certificate used by installed version 1.23 has SHA-256:
 
 `017edcae8126e6d6904e4fdb651b889394e12d555f7576952a3c730e9eb07b59`

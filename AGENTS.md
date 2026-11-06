@@ -81,6 +81,16 @@ than making it public or embedding a token. Never generate a replacement key, si
 commit secrets, embed GitHub credentials, or change repository permissions.
 Persisting signing credentials requires explicit owner approval.
 
+Preserve this SAME signing key for every future release in durable custody at a
+destination specifically approved by the owner. Before starting each release,
+verify that the key is available and its certificate matches the pinned SHA-256;
+also validate recovery from the authorized backup without exposing key material
+or passwords. A temporary folder or build workspace is not a durable backup.
+If the original key or verified recovery is unavailable, stop delivery and report
+the blocker. Never generate a replacement or deliver an APK signed with a
+temporary key. Do not claim custody or backup is configured until it has actually
+been approved, completed, and verified.
+
 Update in place, never uninstall/clear app data. Android's installer confirmation
 is required; do not promise silent installation. Preserve settings and recordings.
 
