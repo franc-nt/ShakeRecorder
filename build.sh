@@ -1,70 +1,67 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Incrementa versão, valida, compila e copia o APK sem depender de um PC específico.
+set -euo pipefail
 
-# ShakeRecorder Build Script
-# Incrementa versão, compila e copia para pasta de release
-
-set -e
-
-# Configurações
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$SCRIPT_DIR"
-BUILD_DIR="$PROJECT_DIR/build"
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GRADLE_FILE="$PROJECT_DIR/app/build.gradle.kts"
-APK_NAME="ShakeRecorder.apk"
+BUILD_DIR="$PROJECT_DIR/build"
 
-# Ambiente (SDK fica na pasta pai)
-export JAVA_HOME=/mnt/c/Users/Francisco/record/sdk/jdk-17.0.2
-export ANDROID_HOME=/mnt/c/Users/Francisco/record/sdk
-export PATH=$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
-
-echo "=========================================="
-echo "  ShakeRecorder Build Script"
-echo "=========================================="
-
-# 1. Ler versão atual
-CURRENT_VERSION_CODE=$(grep -oP 'versionCode = \K\d+' "$GRADLE_FILE")
-CURRENT_VERSION_NAME=$(grep -oP 'versionName = "\K[^"]+' "$GRADLE_FILE")
-
-echo ""
-echo "Versão atual: $CURRENT_VERSION_NAME (code: $CURRENT_VERSION_CODE)"
-
-# 2. Calcular nova versão
-NEW_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
-
-# Incrementar minor version (1.7 -> 1.8, 1.9 -> 1.10)
-MAJOR=$(echo "$CURRENT_VERSION_NAME" | cut -d. -f1)
-MINOR=$(echo "$CURRENT_VERSION_NAME" | cut -d. -f2)
-NEW_MINOR=$((MINOR + 1))
-NEW_VERSION_NAME="$MAJOR.$NEW_MINOR"
-
-echo "Nova versão:  $NEW_VERSION_NAME (code: $NEW_VERSION_CODE)"
-echo ""
-
-# 3. Atualizar build.gradle.kts
-sed -i "s/versionCode = $CURRENT_VERSION_CODE/versionCode = $NEW_VERSION_CODE/" "$GRADLE_FILE"
-sed -i "s/versionName = \"$CURRENT_VERSION_NAME\"/versionName = \"$NEW_VERSION_NAME\"/" "$GRADLE_FILE"
-
-echo "✓ build.gradle.kts atualizado"
-
-# 4. Compilar
-echo ""
-echo "Compilando..."
+if [[ -z "${JAVA_HOME:-}" ]]; then
+    export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+fi
+if [[ -z "${ANDROID_HOME:-}" && -n "${ANDROID_SDK_ROOT:-}" ]]; then
+    export ANDROID_HOME="$ANDROID_SDK_ROOT"
+fi
+if [[ -z "${ANDROID_HOME:-}" && -d "$PROJECT_DIR/../sdk" ]]; then
+    export ANDROID_HOME="$PROJECT_DIR/../sdk"
+fi
+export PATH="$JAVA_HOME/bin:$PATH"
 cd "$PROJECT_DIR"
-./gradlew assembleDebug --quiet
 
-echo "✓ Build concluído"
+# Fail before modifying version or artifacts. Never create a key or fall back to debug.
+for name in SHAKE_KEYSTORE_PATH SHAKE_KEYSTORE_PASSWORD SHAKE_KEY_ALIAS SHAKE_KEY_PASSWORD; do
+    if [[ -z "${!name:-}" ]]; then
+        echo "Missing required signing environment variable: $name" >&2
+        exit 1
+    fi
+done
+[[ -r "$SHAKE_KEYSTORE_PATH" ]] || { echo "Signing keystore is not readable" >&2; exit 1; }
 
-# 5. Limpar pasta de release e copiar novo APK
-APK_SOURCE="$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk"
-APK_DEST="$BUILD_DIR/$APK_NAME"
+BUMP_VERSION=true
+if [[ "${1:-}" == "--no-version-bump" ]]; then
+    BUMP_VERSION=false
+    shift
+fi
+if [[ $# -gt 0 ]]; then
+    echo "Uso: ./build.sh [--no-version-bump]" >&2
+    exit 2
+fi
+CURRENT_CODE=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' "$GRADLE_FILE")
+CURRENT_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' "$GRADLE_FILE")
+if $BUMP_VERSION; then
+    NEW_CODE=$((CURRENT_CODE + 1))
+    NEW_NAME="${CURRENT_NAME%%.*}.$((${CURRENT_NAME#*.} + 1))"
+    sed -i "s/versionCode = $CURRENT_CODE/versionCode = $NEW_CODE/; s/versionName = \"$CURRENT_NAME\"/versionName = \"$NEW_NAME\"/" "$GRADLE_FILE"
+else
+    NEW_NAME="$CURRENT_NAME"
+fi
+# A failed build must not leave an incremented version or replace the previous APK.
+restore_version() {
+    local result=$?
+    if [[ $result -ne 0 ]] && $BUMP_VERSION; then
+        sed -i "s/versionCode = $NEW_CODE/versionCode = $CURRENT_CODE/; s/versionName = \"$NEW_NAME\"/versionName = \"$CURRENT_NAME\"/" "$GRADLE_FILE"
+    fi
+    exit "$result"
+}
+trap restore_version EXIT
 
+python3 -m unittest discover -s scripts -p 'test_*.py'
+./gradlew testDebugUnitTest lintDebug lintRelease assembleRelease --console=plain
 mkdir -p "$BUILD_DIR"
-rm -f "$BUILD_DIR"/*.apk
-cp "$APK_SOURCE" "$APK_DEST"
-
-echo "✓ APK copiado para: $APK_DEST"
-
-echo ""
-echo "=========================================="
-echo "  Build v$NEW_VERSION_NAME concluído!"
-echo "=========================================="
+STAGING_DIR=$(mktemp -d "$BUILD_DIR/release.XXXXXX")
+cp "$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk" "$STAGING_DIR/ShakeRecorder.apk"
+python3 scripts/release_metadata.py "$STAGING_DIR/ShakeRecorder.apk" "$STAGING_DIR/update.json"
+mv "$STAGING_DIR/ShakeRecorder.apk" "$BUILD_DIR/ShakeRecorder.apk"
+mv "$STAGING_DIR/update.json" "$BUILD_DIR/update.json"
+rmdir "$STAGING_DIR"
+echo "Build v$NEW_NAME validado: $BUILD_DIR/ShakeRecorder.apk"

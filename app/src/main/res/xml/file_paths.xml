@@ -3,4 +3,5 @@
     <external-path
         name="music"
         path="Music/ShakeRecorder/" />
+    <cache-path name="updates" path="updates/" />
 </paths>

@@ -23,7 +23,21 @@ class SettingsManager(context: Context) {
         private const val KEY_VOLUME_HOLD_DURATION = "volume_hold_duration"
         private const val KEY_VOLUME_PRESS_COUNT = "volume_press_count"
         private const val DEFAULT_WEBHOOK_URL = "https://webhook.site/620bad6b-72ab-43ec-b0c2-a975290d210f"
+
+        fun isTriggerSetting(key: String?): Boolean = key in setOf(
+            KEY_SHAKE_ENABLED, KEY_SHAKE_COUNT, KEY_VOLUME_HOLD_ENABLED,
+            KEY_VOLUME_TRIPLE_PRESS_ENABLED, KEY_VOLUME_HOLD_DURATION, KEY_VOLUME_PRESS_COUNT
+        )
     }
+
+    fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) =
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+
+    fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) =
+        prefs.unregisterOnSharedPreferenceChangeListener(listener)
+
+    val hasEnabledTriggers: Boolean
+        get() = isShakeEnabled || isVolumeHoldEnabled || isVolumeTriplePressEnabled
 
     var webhookUrl: String
         get() = prefs.getString(KEY_WEBHOOK_URL, DEFAULT_WEBHOOK_URL) ?: DEFAULT_WEBHOOK_URL

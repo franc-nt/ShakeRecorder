@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:fillViewport="true" android:padding="16dp" android:background="?attr/colorSurface">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <Button android:id="@+id/backButton" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Voltar" android:textColor="?attr/colorOnPrimary" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" android:text="Atualizar ShakeRecorder"
+            android:textSize="24sp" android:textStyle="bold" android:textColor="?attr/colorOnSurface" />
+        <TextView android:id="@+id/currentVersion" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="12dp"
+            android:textSize="16sp" android:textColor="?attr/colorOnSurface" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:textSize="16sp"
+            android:text="As atualizações vêm das Releases do projeto franc-nt/ShakeRecorder no GitHub. O Android confirma a instalação. Seus dados são mantidos ao atualizar com a mesma assinatura. Não desinstale nem limpe os dados."
+            android:textColor="?attr/colorOnSurface" />
+        <TextView android:id="@+id/updateStatus" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="24dp"
+            android:text="Verifique se há uma versão nova. Salve qualquer gravação antes de instalar."
+            android:textSize="16sp" android:accessibilityLiveRegion="polite"
+            android:textColor="?attr/colorOnSurface" />
+        <Button android:id="@+id/updateButton" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="24dp"
+            android:text="Verificar atualização" android:textColor="?attr/colorOnPrimary" />
+    </LinearLayout>
+</ScrollView>

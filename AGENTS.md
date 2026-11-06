@@ -25,7 +25,7 @@ Android app that records audio when the phone is shaken 3 times.
 - **Language**: Kotlin
 - **Min SDK**: 26 (Android 8.0)
 - **Target SDK**: 36 (Android 16)
-- **Build**: Gradle 8.2 with Kotlin DSL
+- **Build**: Gradle 8.11.1 / AGP 8.10.1 with Kotlin DSL
 
 ## Project Structure
 
@@ -67,17 +67,39 @@ app/src/main/
 
 ## Build
 
-### IMPORTANTE: Sempre usar o script de build
+### Mandatory release workflow
+
+Every delivered code change MUST increment versionCode/versionName and publish a
+GitHub Release in `franc-nt/ShakeRecorder`, tagged `v<versionName>`, containing
+`ShakeRecorder.apk` and `update.json` from the same verified build. Follow
+`RELEASING.md`. If publishing is blocked, report the blocker, not a completed release.
+
+Keep application ID `com.shakerecorder`, the same signing certificate, and the
+repository visibility unchanged. The current updater consumes public Releases;
+if the repository becomes private, obtain an approved distribution design rather
+than making it public or embedding a token. Never generate a replacement key, silently use debug signing,
+commit secrets, embed GitHub credentials, or change repository permissions.
+Persisting signing credentials requires explicit owner approval.
+
+Update in place, never uninstall/clear app data. Android's installer confirmation
+is required; do not promise silent installation. Preserve settings and recordings.
+
+### Always use the build script
 
 ```bash
-/mnt/c/Users/Francisco/record/ShakeRecorder/build.sh
+./build.sh
 ```
 
 O script automaticamente:
 1. Lê a versão atual do `build.gradle.kts`
 2. Incrementa `versionCode` e `versionName`
-3. Compila o APK
-4. Copia para `build/ShakeRecorder.apk` (sobrescreve o anterior)
+3. Executa testes e lint e compila o APK release assinado
+4. Verifica assinatura, pacote e versão antes de gerar `build/ShakeRecorder.apk`
+   e `build/update.json`
+
+`--no-version-bump` is only for retrying the same unpublished version. Never reuse
+a published version or decrease versionCode. Missing signing credentials stop the
+build; there is no key generation or debug fallback.
 
 **NÃO fazer build manual.** Sempre usar o script para garantir versionamento correto.
 
@@ -89,7 +111,7 @@ O script automaticamente:
 
 ## APK Release
 
-- **Folder**: `C:\Users\Francisco\record\build\`
+- **Folder**: `build/` inside this repository
 - **Naming**: `ShakeRecorder.apk` (nome fixo, versão fica apenas dentro do app)
 - Sempre sobrescrever com a última versão compilada
 
@@ -119,5 +141,5 @@ https://webhook.site/620bad6b-72ab-43ec-b0c2-a975290d210f
 ## Known Issues
 
 - Samsung One UI may kill background service - disable battery optimization for the app
-- Consumo de bateria moderado (~3-5% por dia) devido ao acelerometro sempre ativo
+- Consumo de bateria depende do aparelho e dos gatilhos; não foi medido
 - Volume triggers não funcionam quando Spotify/YouTube está tocando (botões vão para o media player)

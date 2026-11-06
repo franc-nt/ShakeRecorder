@@ -8,83 +8,84 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <!-- Main Content -->
-    <LinearLayout
+    <!-- Scrollable on small windows, landscape, and large accessibility fonts. -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/mainContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="@android:color/white">
+        android:fillViewport="true"
+        android:background="?attr/colorSurface">
 
-        <!-- Top section with button -->
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
-
-            <!-- Menu Button (top right) -->
-            <ImageButton
-                android:id="@+id/menuButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_margin="16dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/menu"
-                android:src="@drawable/ic_menu"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:tint="@color/black" />
-
-            <!-- Status Text (above button) -->
-            <TextView
-                android:id="@+id/statusText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:text="@string/service_inactive"
-                android:textSize="16sp"
-                app:layout_constraintBottom_toTopOf="@id/mainButton"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
-
-            <!-- Big Circular Button -->
-            <Button
-                android:id="@+id/mainButton"
-                android:layout_width="180dp"
-                android:layout_height="180dp"
-                android:background="@drawable/circular_button"
-                android:text="@string/iniciar"
-                android:textColor="@android:color/white"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:stateListAnimator="@null"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <!-- Recordings Section -->
-        <TextView
-            android:id="@+id/recordingsLabel"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/gravacoes_recentes"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="#666666"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp" />
+            android:orientation="vertical">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recordingsList"
-            android:layout_width="match_parent"
-            android:layout_height="180dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginBottom="16dp" />
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="64dp">
+                <ImageButton
+                    android:id="@+id/menuButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginHorizontal="16dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/menu"
+                    android:src="@drawable/ic_menu"
+                    app:tint="?attr/colorOnSurface" />
+            </FrameLayout>
 
-    </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="280dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/statusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:gravity="center"
+                    android:text="@string/service_inactive"
+                    android:textSize="16sp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/mainButton"
+                    android:layout_width="180dp"
+                    android:layout_height="180dp"
+                    android:background="@drawable/circular_button"
+                    android:text="@string/iniciar"
+                    android:textColor="@android:color/white"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:stateListAnimator="@null"
+                    app:backgroundTint="@null" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/recordingsLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/gravacoes_recentes"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_secondary"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginVertical="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recordingsList"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="16dp" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- Navigation Drawer (right side) -->
     <LinearLayout
@@ -92,8 +93,7 @@
         android:layout_width="320dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
-        android:background="@android:color/white"
-        android:fitsSystemWindows="true"
+        android:background="?attr/colorSurface"
         android:orientation="vertical">
 
         <!-- Fixed Header -->
@@ -126,6 +126,7 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:paddingVertical="12dp"
+                    android:minHeight="48dp"
                     android:background="?attr/selectableItemBackground">
 
                     <TextView
@@ -135,7 +136,7 @@
                         android:text="@string/envio_section"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#666666" />
+                        android:textColor="@color/text_secondary" />
 
                     <ImageView
                         android:id="@+id/envioArrow"
@@ -247,7 +248,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#E0E0E0"
+                    android:background="@color/divider"
                     android:layout_marginVertical="16dp" />
 
                 <!-- ==================== GATILHOS ==================== -->
@@ -258,6 +259,7 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:paddingVertical="12dp"
+                    android:minHeight="48dp"
                     android:background="?attr/selectableItemBackground">
 
                     <TextView
@@ -267,7 +269,7 @@
                         android:text="@string/triggers_section"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#666666" />
+                        android:textColor="@color/text_secondary" />
 
                     <ImageView
                         android:id="@+id/gatilhosArrow"
@@ -469,7 +471,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#E0E0E0"
+                    android:background="@color/divider"
                     android:layout_marginVertical="16dp" />
 
                 <!-- ==================== OPCOES ==================== -->
@@ -480,6 +482,7 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:paddingVertical="12dp"
+                    android:minHeight="48dp"
                     android:background="?attr/selectableItemBackground">
 
                     <TextView
@@ -489,7 +492,7 @@
                         android:text="@string/options_section"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#666666" />
+                        android:textColor="@color/text_secondary" />
 
                     <ImageView
                         android:id="@+id/opcoesArrow"
@@ -505,6 +508,13 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:visibility="gone">
+
+                <Button
+                    android:id="@+id/checkUpdateButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Atualizar aplicativo"
+                    android:textColor="?attr/colorOnPrimary" />
 
                 <!-- Sound Toggle -->
                 <LinearLayout
@@ -545,7 +555,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#E0E0E0"
+                    android:background="@color/divider"
                     android:layout_marginVertical="16dp" />
 
                 <!-- ==================== LOGS ==================== -->
@@ -556,6 +566,7 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:paddingVertical="12dp"
+                    android:minHeight="48dp"
                     android:background="?attr/selectableItemBackground">
 
                     <TextView
@@ -565,7 +576,7 @@
                         android:text="@string/logs"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#666666" />
+                        android:textColor="@color/text_secondary" />
 
                     <ImageView
                         android:id="@+id/logsArrow"
@@ -585,7 +596,7 @@
                 <ScrollView
                     android:layout_width="match_parent"
                     android:layout_height="120dp"
-                    android:background="#F5F5F5"
+                    android:background="@color/log_background"
                     android:padding="8dp">
 
                     <TextView
@@ -594,7 +605,7 @@
                         android:layout_height="wrap_content"
                         android:textSize="10sp"
                         android:fontFamily="monospace"
-                        android:textColor="#333333" />
+                        android:textColor="?attr/colorOnSurface" />
                 </ScrollView>
 
                 </LinearLayout>
@@ -613,14 +624,15 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp"
-            android:background="@android:color/white"
+            android:background="?attr/colorSurface"
             android:elevation="8dp">
 
             <Button
                 android:id="@+id/saveButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/save_settings" />
+                android:text="@string/save_settings"
+                android:textColor="?attr/colorOnPrimary" />
 
             <!-- Version Info -->
             <TextView
@@ -630,7 +642,7 @@
                 android:gravity="center"
                 android:paddingTop="8dp"
                 android:textSize="11sp"
-                android:textColor="#999999" />
+                android:textColor="@color/text_secondary" />
 
         </LinearLayout>
 

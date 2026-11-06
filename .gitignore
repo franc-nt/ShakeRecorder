@@ -94,3 +94,15 @@ Thumbs.db
 
 # SDK (local development)
 sdk/
+
+# Kotlin compiler cache
+.kotlin/
+
+# Python server tests and local credentials
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.venv/
+.env
+.env.*
+*.env

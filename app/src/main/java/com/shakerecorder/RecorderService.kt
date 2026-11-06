@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.hardware.Sensor
 import android.hardware.SensorManager
@@ -22,6 +23,7 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -42,7 +44,43 @@ class RecorderService : Service() {
         const val CHANNEL_ID = "shake_recorder_channel"
         const val NOTIFICATION_ID = 1
         const val ACTION_STOP = "com.shakerecorder.STOP"
+        const val ACTION_STOP_RECORDING = "com.shakerecorder.STOP_RECORDING"
+        const val ACTION_START_RECORDING = "com.shakerecorder.START_RECORDING"
         const val ACTION_TOGGLE_RECORDING = "com.shakerecorder.TOGGLE_RECORDING"
+        const val ACTION_APPLY_SETTINGS = "com.shakerecorder.APPLY_SETTINGS"
+
+        private var instance: RecorderService? = null
+        private var foregroundVolumeKeys = false
+
+        /** Pause only after the user chooses Install; never interrupt an active recording. */
+        fun prepareForUpdate(): Boolean {
+            val service = instance ?: return true
+            if (isRecording) return false
+            service.installingUpdate = true
+            service.sensorManager.unregisterListener(service.shakeDetector)
+            service.volumeButtonDetector?.stop()
+            service.updateNotification(false)
+            return true
+        }
+
+        fun resumeAfterUpdate() {
+            instance?.let { service ->
+                if (service.installingUpdate && service.settingsManager.isServiceEnabled) {
+                    service.installingUpdate = false
+                    service.appliedTriggerSettings = null
+                    service.applyTriggerSettings()
+                    service.updateNotification(isRecording)
+                }
+            }
+        }
+
+        fun setForegroundVolumeKeys(enabled: Boolean) {
+            foregroundVolumeKeys = enabled
+            instance?.volumeButtonDetector?.setForegroundKeys(enabled)
+        }
+
+        fun dispatchVolumeKeyEvent(event: KeyEvent): Boolean =
+            instance?.volumeButtonDetector?.onKeyEvent(event) ?: false
 
         var isRunning = false
             private set
@@ -66,10 +104,24 @@ class RecorderService : Service() {
     private var toneGenerator: ToneGenerator? = null
     private val handler = Handler(Looper.getMainLooper())
 
-    // Volume button detection
-    private var volumeUpPressTime: Long = 0
-    private var volumeUpHoldRunnable: Runnable? = null
-    private val VOLUME_HOLD_DURATION = 3000L // 3 seconds
+    private var installingUpdate = false
+    private var appliedTriggerSettings: List<Any>? = null
+    private val applySettings = Runnable { if (isRunning) applyTriggerSettings() }
+    private val settingsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (SettingsManager.isTriggerSetting(key)) {
+            handler.removeCallbacks(applySettings)
+            handler.post(applySettings)
+        }
+    }
+    private val renewWakeLock = object : Runnable {
+        override fun run() {
+            if (!isRunning) return
+            // A timeout remains a fail-safe, but monitoring must not silently stop
+            // after the old ten-minute lease. Cancel renewal when the service stops.
+            wakeLock?.acquire(10 * 60 * 1000L)
+            handler.postDelayed(this, 5 * 60 * 1000L)
+        }
+    }
 
     private var wakeLock: PowerManager.WakeLock? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -78,6 +130,8 @@ class RecorderService : Service() {
         super.onCreate()
 
         settingsManager = SettingsManager(this)
+        instance = this
+        settingsManager.registerListener(settingsListener)
         audioRecorder = AudioRecorder(this)
         webhookUploader = WebhookUploader()
         telegramUploader = TelegramUploader()
@@ -92,7 +146,6 @@ class RecorderService : Service() {
 
         setupToneGenerator()
         createNotificationChannel()
-        acquireWakeLock()
     }
 
     private fun setupToneGenerator() {
@@ -105,42 +158,58 @@ class RecorderService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            settingsManager.isServiceEnabled = false
             stopSelf()
             return START_NOT_STICKY
         }
 
-        if (intent?.action == ACTION_TOGGLE_RECORDING) {
-            if (isRunning) {
-                onShakeDetected()
+        if (!isRunning) {
+            val notification = createNotification(false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
             }
-            return START_STICKY
+            isRunning = true
+            acquireWakeLock()
+            applyTriggerSettings()
+            log("Servico iniciado")
+            notifyStatusChanged()
         }
 
-        isRunning = true
-
-        val notification = createNotification(false)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            )
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        when (intent?.action) {
+            ACTION_APPLY_SETTINGS -> applyTriggerSettings()
+            ACTION_START_RECORDING -> if (!isRecording) startRecording()
+            ACTION_STOP_RECORDING -> if (isRecording) stopRecording()
+            ACTION_TOGGLE_RECORDING -> onShakeDetected()
         }
-
-        registerShakeListener()
-        initVolumeButtonDetector()
-        log("Servico iniciado")
-        notifyStatusChanged()
-
         return START_STICKY
+    }
+
+    private fun applyTriggerSettings() {
+        if (installingUpdate) return
+        val next = listOf(settingsManager.isShakeEnabled, settingsManager.shakeCount,
+            settingsManager.isVolumeHoldEnabled, settingsManager.isVolumeTriplePressEnabled,
+            settingsManager.volumeHoldDuration, settingsManager.volumePressCount)
+        if (next == appliedTriggerSettings) return
+        sensorManager.unregisterListener(shakeDetector)
+        shakeDetector = ShakeDetector(::onShakeDetected, settingsManager.shakeCount)
+        registerShakeListener()
+        volumeButtonDetector?.stop()
+        volumeButtonDetector = null
+        initVolumeButtonDetector()
+        appliedTriggerSettings = next
+        log("Gatilhos aplicados sem reiniciar o servico")
     }
 
     private fun registerShakeListener() {
@@ -174,6 +243,7 @@ class RecorderService : Service() {
             triplePressWindowMs = 5000L
         )
         volumeButtonDetector?.start()
+        volumeButtonDetector?.setForegroundKeys(foregroundVolumeKeys)
 
         val triggers = mutableListOf<String>()
         if (settingsManager.isVolumeHoldEnabled) triggers.add("segurar ${settingsManager.volumeHoldDuration}s")
@@ -190,6 +260,7 @@ class RecorderService : Service() {
     }
 
     private fun startRecording() {
+        if (installingUpdate) return
         vibrate()
         playStartSound()
 
@@ -363,13 +434,17 @@ class RecorderService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = if (recording) {
+        val title = if (installingUpdate) {
+            "Atualização em andamento"
+        } else if (recording) {
             getString(R.string.notification_title_recording)
         } else {
             getString(R.string.notification_title_active)
         }
 
-        val text = if (recording) {
+        val text = if (installingUpdate) {
+            "Monitoramento pausado até voltar ao aplicativo"
+        } else if (recording) {
             getString(R.string.notification_text_recording)
         } else {
             getString(R.string.notification_text_active)
@@ -402,8 +477,10 @@ class RecorderService : Service() {
             PowerManager.PARTIAL_WAKE_LOCK,
             "ShakeRecorder::RecordingWakeLock"
         ).apply {
-            acquire(10 * 60 * 1000L) // 10 minutes max
+            setReferenceCounted(false)
+            acquire(10 * 60 * 1000L)
         }
+        handler.postDelayed(renewWakeLock, 5 * 60 * 1000L)
     }
 
     private fun releaseWakeLock() {
@@ -426,6 +503,8 @@ class RecorderService : Service() {
     }
 
     override fun onDestroy() {
+        settingsManager.unregisterListener(settingsListener)
+        if (isRecording) stopRecording()
         sensorManager.unregisterListener(shakeDetector)
         volumeButtonDetector?.stop()
         volumeButtonDetector = null
@@ -437,6 +516,7 @@ class RecorderService : Service() {
 
         isRunning = false
         isRecording = false
+        instance = null
         notifyStatusChanged()
         log("Servico parado")
 
