@@ -45,6 +45,19 @@ Do not persist secrets in GitHub Actions or any other service without explicit
 owner approval. No workflow that provisions secrets or changes permissions is
 included.
 
+## Validate without a signing key
+
+Run `./build.sh --check-only` during development to run Python release-tool tests,
+Android unit tests, and debug/release lint. This mode requires JDK 21 and the
+Android SDK but does not require signing credentials, create any key, package an
+APK, increment versionCode/versionName, or replace the release APK/metadata. Normal
+Gradle caches, test results, and lint reports may be written.
+
+`--check-only` and `--no-version-bump` are mutually exclusive; duplicate flags and
+unknown arguments are rejected. Passing checks is not a release: compatible
+delivery still requires the existing signing key and pinned certificate, a new
+version, a verified APK/metadata pair, and publication using the workflow below.
+
 ## Build and publish
 
 1. Make the change and run `./build.sh`. This increments versionCode and the minor

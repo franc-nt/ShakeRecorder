@@ -49,6 +49,15 @@ A primeira instalação da versão com o atualizador ainda exige abrir o APK rec
 
 As configurações ficam em SharedPreferences privadas (`shake_recorder_prefs`) e os áudios em `Music/ShakeRecorder`. Atualizações mantêm pacote, assinatura, preferências e diretório. O app ainda não tem exportação/importação de configurações: `allowBackup` não garante restauração após desinstalar. Uma cópia manual dos áudios pelo Meus Arquivos da Samsung pode ser útil, mas não substitui manter a instalação existente. Nunca desinstale para resolver uma assinatura incompatível.
 
+## Compartilhar gravações (próxima versão, ainda não publicada)
+
+1. Toque em uma gravação da lista e escolha **Ouvir** ou **Compartilhar**.
+2. **Compartilhar** abre o seletor padrão do Android com os aplicativos instalados compatíveis, como WhatsApp e Telegram. Escolha o aplicativo e o destinatário nele.
+3. O app oferece somente o arquivo selecionado por uma URI `content://`, com acesso temporário de leitura. Não concede escrita ou acesso à pasta inteira e não envia nada automaticamente pelo seletor.
+4. Cancelar deixa o arquivo e as configurações como estavam. Arquivos ausentes/inacessíveis são tratados sem encerrar o app. A gravação que ainda está em andamento deve ser finalizada antes de compartilhar; gravações anteriores continuam disponíveis.
+
+Esta alteração foi implementada e validada por testes automatizados sobre a 1.24, mas ainda não foi lançada. Sua publicação como atualização instalável depende da recuperação da **mesma chave de assinatura**, que não está disponível no ambiente atual. Não foi gerada uma chave substituta. A Release 1.24 continua sendo a versão publicada até existir um APK novo, testado e assinado corretamente. Veja [a validação e o bloqueio de release](SHARING-VALIDATION.md).
+
 ## Configurações
 
 | Configuração | Padrão | Descrição |
@@ -101,6 +110,8 @@ Antes de usar em gravações importantes, verificar no aparelho:
 - Microfone autorizado, inclusive se notificações forem negadas.
 - Iniciar/parar, tocar o áudio salvo e verificar gravação com tela bloqueada.
 - Testar os gatilhos configurados e os destinos de envio já autorizados.
+
+- Na próxima versão com compartilhamento, toque em um áudio e confira Ouvir/Compartilhar, escolha WhatsApp e Telegram, confira o arquivo recebido e teste Cancelar/Voltar. A lista de destinos depende dos aplicativos instalados.
 
 Os testes automatizados não substituem esses testes físicos do microfone, sensores e gerenciamento de bateria da Samsung.
 

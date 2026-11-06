@@ -86,6 +86,8 @@ class RecorderService : Service() {
             private set
         var isRecording = false
             private set
+        internal var activeRecordingPath: String? = null
+            private set
 
         var onStatusChanged: ((Boolean, Boolean) -> Unit)? = null
         var onLogMessage: ((String) -> Unit)? = null
@@ -266,6 +268,7 @@ class RecorderService : Service() {
 
         val filePath = audioRecorder.startRecording()
         if (filePath != null) {
+            activeRecordingPath = filePath
             isRecording = true
             updateNotification(true)
             log("Gravacao iniciada: ${filePath.substringAfterLast("/")}")
@@ -281,6 +284,7 @@ class RecorderService : Service() {
 
         val filePath = audioRecorder.stopRecording()
         isRecording = false
+        activeRecordingPath = null
         updateNotification(false)
 
         if (filePath != null) {
@@ -516,6 +520,7 @@ class RecorderService : Service() {
 
         isRunning = false
         isRecording = false
+        activeRecordingPath = null
         instance = null
         notifyStatusChanged()
         log("Servico parado")

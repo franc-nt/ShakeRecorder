@@ -6,6 +6,18 @@ PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GRADLE_FILE="$PROJECT_DIR/app/build.gradle.kts"
 BUILD_DIR="$PROJECT_DIR/build"
 
+# Parse first: validation-only and release-retry modes must never be combined.
+BUMP_VERSION=true
+CHECK_ONLY=false
+if [[ $# -eq 1 && "$1" == "--check-only" ]]; then
+    CHECK_ONLY=true
+elif [[ $# -eq 1 && "$1" == "--no-version-bump" ]]; then
+    BUMP_VERSION=false
+elif [[ $# -ne 0 ]]; then
+    echo "Uso: ./build.sh [--check-only | --no-version-bump]" >&2
+    exit 2
+fi
+
 if [[ -z "${JAVA_HOME:-}" ]]; then
     export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
 fi
@@ -18,6 +30,14 @@ fi
 export PATH="$JAVA_HOME/bin:$PATH"
 cd "$PROJECT_DIR"
 
+if $CHECK_ONLY; then
+    # No packaging/signing tasks: no APK, key, version bump or release artifacts.
+    python3 -m unittest discover -s scripts -p 'test_*.py'
+    ./gradlew testDebugUnitTest lintDebug lintRelease --console=plain
+    echo "Validação concluída sem gerar APK ou alterar a versão."
+    exit 0
+fi
+
 # Fail before modifying version or artifacts. Never create a key or fall back to debug.
 for name in SHAKE_KEYSTORE_PATH SHAKE_KEYSTORE_PASSWORD SHAKE_KEY_ALIAS SHAKE_KEY_PASSWORD; do
     if [[ -z "${!name:-}" ]]; then
@@ -27,15 +47,6 @@ for name in SHAKE_KEYSTORE_PATH SHAKE_KEYSTORE_PASSWORD SHAKE_KEY_ALIAS SHAKE_KE
 done
 [[ -r "$SHAKE_KEYSTORE_PATH" ]] || { echo "Signing keystore is not readable" >&2; exit 1; }
 
-BUMP_VERSION=true
-if [[ "${1:-}" == "--no-version-bump" ]]; then
-    BUMP_VERSION=false
-    shift
-fi
-if [[ $# -gt 0 ]]; then
-    echo "Uso: ./build.sh [--no-version-bump]" >&2
-    exit 2
-fi
 CURRENT_CODE=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' "$GRADLE_FILE")
 CURRENT_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' "$GRADLE_FILE")
 if $BUMP_VERSION; then

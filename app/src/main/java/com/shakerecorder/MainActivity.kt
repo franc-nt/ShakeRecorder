@@ -1,12 +1,12 @@
 package com.shakerecorder
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.provider.Settings
 import android.view.View
 import android.view.KeyEvent
@@ -18,7 +18,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -26,6 +25,7 @@ import androidx.core.view.doOnLayout
 import androidx.core.view.updatePadding
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.color.MaterialColors
 import com.shakerecorder.databinding.ActivityMainBinding
 import java.io.File
 
@@ -36,6 +36,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recordingsAdapter: RecordingsAdapter
     private val logMessages = StringBuilder()
     private var recordAfterPermission = false
+    private var recordingActionsDialog: AlertDialog? = null
+    private var shareInProgress = false
+    private val shareLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        // Opening/closing the chooser does not mean the user sent the recording.
+        shareInProgress = false
+    }
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -59,6 +65,7 @@ class MainActivity : AppCompatActivity() {
 
         settingsManager = SettingsManager(this)
         recordAfterPermission = savedInstanceState?.getBoolean("recordAfterPermission") ?: false
+        shareInProgress = savedInstanceState?.getBoolean("shareInProgress") ?: false
 
         setupUI()
         setupRecordingsList()
@@ -222,7 +229,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupRecordingsList() {
         recordingsAdapter = RecordingsAdapter { file ->
-            playRecording(file)
+            showRecordingActions(file)
         }
         binding.recordingsList.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
@@ -231,31 +238,67 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadRecordings() {
-        val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-        val recordingsDir = File(musicDir, "ShakeRecorder")
-
-        if (recordingsDir.exists()) {
-            val files = recordingsDir.listFiles { file ->
-                file.isFile && file.extension.lowercase() in listOf("m4a", "mp3", "wav", "ogg")
-            }?.toList() ?: emptyList()
-            recordingsAdapter.updateRecordings(files)
+        val files = try {
+            RecordingIntents.recordingsDirectory().listFiles { file ->
+                file.isFile && RecordingIntents.isSupportedAudio(file)
+            }?.toList().orEmpty()
+        } catch (_: SecurityException) {
+            emptyList()
         }
+        // Also clear stale entries when storage/the directory is no longer available.
+        recordingsAdapter.updateRecordings(files)
+    }
+
+    private fun showRecordingActions(file: File) {
+        if (shareInProgress) return
+        recordingActionsDialog?.dismiss()
+        recordingActionsDialog = AlertDialog.Builder(this)
+            .setTitle(file.name)
+            .setItems(arrayOf(getString(R.string.listen_recording), getString(R.string.share_recording))) { _, which ->
+                when (which) {
+                    0 -> playRecording(file)
+                    1 -> shareRecording(file)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .create().also { dialog ->
+                dialog.setOnDismissListener { if (recordingActionsDialog === dialog) recordingActionsDialog = null }
+                dialog.show()
+                // The app's fixed purple primary has low contrast on a dark dialog.
+                val cancel = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                cancel.setTextColor(MaterialColors.getColor(cancel, com.google.android.material.R.attr.colorOnSurface))
+            }
     }
 
     private fun playRecording(file: File) {
         try {
-            val uri = FileProvider.getUriForFile(
-                this,
-                "${packageName}.fileprovider",
-                file
-            )
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "audio/*")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(this, "Erro ao abrir arquivo", Toast.LENGTH_SHORT).show()
+            startActivity(RecordingIntents.play(this, file))
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.no_audio_player, Toast.LENGTH_SHORT).show()
+        } catch (_: RecordingIntents.ActiveRecordingException) {
+            Toast.makeText(this, R.string.finish_recording_first, Toast.LENGTH_SHORT).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, R.string.recording_unavailable, Toast.LENGTH_SHORT).show()
+            loadRecordings()
+        }
+    }
+
+    private fun shareRecording(file: File) {
+        if (shareInProgress) return
+        try {
+            val chooser = RecordingIntents.share(this, file)
+            shareInProgress = true
+            shareLauncher.launch(chooser)
+        } catch (_: ActivityNotFoundException) {
+            shareInProgress = false
+            Toast.makeText(this, R.string.no_share_app, Toast.LENGTH_SHORT).show()
+        } catch (_: RecordingIntents.ActiveRecordingException) {
+            shareInProgress = false
+            Toast.makeText(this, R.string.finish_recording_first, Toast.LENGTH_SHORT).show()
+        } catch (_: Exception) {
+            shareInProgress = false
+            Toast.makeText(this, R.string.recording_unavailable, Toast.LENGTH_SHORT).show()
+            loadRecordings()
         }
     }
 
@@ -494,10 +537,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean("recordAfterPermission", recordAfterPermission)
+        outState.putBoolean("shareInProgress", shareInProgress)
         super.onSaveInstanceState(outState)
     }
 
     override fun onDestroy() {
+        recordingActionsDialog?.dismiss()
         RecorderService.onStatusChanged = null
         RecorderService.onLogMessage = null
         RecorderService.onRecordingSaved = null

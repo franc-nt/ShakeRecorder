@@ -113,6 +113,18 @@ build; there is no key generation or debug fallback.
 
 **NÃO fazer build manual.** Sempre usar o script para garantir versionamento correto.
 
+### Validation without signing or delivery
+
+Run `./build.sh --check-only` to execute Python release-tool tests, Android unit
+tests, and debug/release lint without a signing key. This mode does not build an
+APK, create a key, increment the version, or replace `build/ShakeRecorder.apk` or
+`build/update.json`. It still requires JDK 21 and the Android SDK. It may write
+normal Gradle caches, test results, and lint reports.
+
+Do not combine `--check-only` with `--no-version-bump` or any other argument.
+Validation-only is not a delivered release and does not relax the signing,
+certificate pin, version increment, or publication requirements above.
+
 ## Version Control
 
 - **Arquivo**: `app/build.gradle.kts`

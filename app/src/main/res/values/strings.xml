@@ -52,4 +52,12 @@
 
     <!-- Accessibility -->
     <string name="expand">Expandir</string>
+    <string name="listen_recording">Ouvir</string>
+    <string name="share_recording">Compartilhar</string>
+    <string name="share_recording_title">Compartilhar gravação</string>
+    <string name="cancel">Cancelar</string>
+    <string name="recording_unavailable">Não foi possível acessar essa gravação. Confira se o arquivo ainda existe e pode ser lido.</string>
+    <string name="finish_recording_first">Termine e salve esta gravação antes de abrir ou compartilhar.</string>
+    <string name="no_audio_player">Nenhum aplicativo disponível para ouvir esse áudio.</string>
+    <string name="no_share_app">Nenhum aplicativo disponível para compartilhar esse áudio.</string>
 </resources>
