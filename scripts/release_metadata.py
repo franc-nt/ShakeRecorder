@@ -10,7 +10,9 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-CERTIFICATE = "017edcae8126e6d6904e4fdb651b889394e12d555f7576952a3c730e9eb07b59"
+# The planned 1.25 lineage starts with a new, owner-authorized signing key.
+# This build-time pin does not make its APK compatible with installed 1.24.
+CERTIFICATE = "8eebaa0eff8e5a598a4012dafff7e7c4009e5afbc5ea029b990ce6800977e993"
 
 
 def android_tool(name):
@@ -28,7 +30,7 @@ def android_tool(name):
 def verify_identity(signature, badging, version_code, version_name):
     certificates = re.findall(r"Signer #\d+ certificate SHA-256 digest: ([a-fA-F0-9]+)", signature)
     if [c.lower() for c in certificates] != [CERTIFICATE]:
-        raise ValueError("APK signing certificate differs from the installed app")
+        raise ValueError("APK signing certificate differs from the configured release certificate")
     package = re.search(r"package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", badging)
     if not package or package.groups() != ("com.shakerecorder", str(version_code), version_name):
         raise ValueError("APK package/version does not match the project")

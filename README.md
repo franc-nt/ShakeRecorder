@@ -32,7 +32,7 @@ Aplicativo Android que grava áudio quando o celular é balançado 3 vezes.
 3. Conceda as permissões solicitadas
 4. Ative o monitoramento nas configurações de gatilhos ou toque em Iniciar para gravar.
 
-**Não desinstale nem limpe os dados para atualizar.** O APK 1.24 usa o mesmo certificado da candidata 1.23 entregue. Se o Android indicar conflito de assinatura, interrompa a instalação e procure uma versão assinada com a chave correta.
+**Não desinstale nem limpe os dados para atualizar.** A chave de assinatura da 1.24 foi perdida. A próxima versão está sendo preparada com uma chave nova e **não poderá ser instalada por cima da 1.24, nem abrindo o APK manualmente**. Leia o aviso de compatibilidade da release antes de baixar. Se o Android indicar conflito de assinatura, interrompa a instalação.
 
 ## Atualizar pelo aplicativo (1.24+)
 
@@ -43,20 +43,24 @@ Aplicativo Android que grava áudio quando o celular é balançado 3 vezes.
 5. Confirme a instalação no instalador Android. Não é uma instalação silenciosa. Termine qualquer gravação antes: o app não abre o instalador enquanto houver uma gravação ativa.
 6. Reabra o app e confira a versão, configurações e gravações. Cancelar o instalador retoma o monitoramento, respeitando se você o parou explicitamente.
 
-A primeira instalação da versão com o atualizador ainda exige abrir o APK recebido, **por cima da 1.23 compatível**, sem desinstalar. As próximas usam o botão. O repositório precisa conter uma Release estável com `ShakeRecorder.apk` e `update.json` da mesma compilação, conforme `RELEASING.md`. O app não contém tokens GitHub; uma distribuição privada exige outro desenho autorizado.
+O atualizador só instala versões assinadas com o mesmo certificado da instalação atual. A transição da candidata 1.23 para a 1.24 manteve esse certificado; a nova chave planejada para a 1.25 inicia uma linha de assinatura diferente e não pode fazer essa transição. O bloqueio de arquivos incompatíveis continuará ativo.
+
+O repositório precisa conter uma Release estável com `ShakeRecorder.apk` e `update.json` da mesma compilação, conforme `RELEASING.md`. A primeira release com a nova chave deve ficar claramente identificada como pré-release incompatível com a 1.24, fora do Latest. O app não contém tokens GitHub; uma distribuição privada exige outro desenho autorizado.
 
 ### Proteção dos dados
 
-As configurações ficam em SharedPreferences privadas (`shake_recorder_prefs`) e os áudios em `Music/ShakeRecorder`. Atualizações mantêm pacote, assinatura, preferências e diretório. O app ainda não tem exportação/importação de configurações: `allowBackup` não garante restauração após desinstalar. Uma cópia manual dos áudios pelo Meus Arquivos da Samsung pode ser útil, mas não substitui manter a instalação existente. Nunca desinstale para resolver uma assinatura incompatível.
+As configurações ficam em SharedPreferences privadas (`shake_recorder_prefs`) e os áudios em `Music/ShakeRecorder`. Atualizações compatíveis mantêm pacote, assinatura, preferências e diretório. O app ainda não tem exportação/importação de configurações: `allowBackup` não garante restauração após desinstalar. Uma cópia manual dos áudios pelo Meus Arquivos da Samsung pode ser útil, mas não substitui manter a instalação existente. Nunca desinstale para resolver uma assinatura incompatível.
 
-## Compartilhar gravações (próxima versão, ainda não publicada)
+Antes de qualquer migração da 1.24, será preciso combinar e validar separadamente como preservar os áudios e as configurações. A geração de uma chave nova não autoriza remover o app nem limpar seus dados. Esta preparação não inclui migração de dados e não garante restauração. Para testar uma instalação limpa, use outro aparelho ou emulador sem a instalação existente; isso não valida a migração do aparelho principal.
+
+## Compartilhar gravações (1.25, pré-release de migração)
 
 1. Toque em uma gravação da lista e escolha **Ouvir** ou **Compartilhar**.
 2. **Compartilhar** abre o seletor padrão do Android com os aplicativos instalados compatíveis, como WhatsApp e Telegram. Escolha o aplicativo e o destinatário nele.
 3. O app oferece somente o arquivo selecionado por uma URI `content://`, com acesso temporário de leitura. Não concede escrita ou acesso à pasta inteira e não envia nada automaticamente pelo seletor.
 4. Cancelar deixa o arquivo e as configurações como estavam. Arquivos ausentes/inacessíveis são tratados sem encerrar o app. A gravação que ainda está em andamento deve ser finalizada antes de compartilhar; gravações anteriores continuam disponíveis.
 
-Esta alteração foi implementada e validada por testes automatizados sobre a 1.24, mas ainda não foi lançada. Sua publicação como atualização instalável depende da recuperação da **mesma chave de assinatura**, que não está disponível no ambiente atual. Não foi gerada uma chave substituta. A Release 1.24 continua sendo a versão publicada até existir um APK novo, testado e assinado corretamente. Veja [a validação e o bloqueio de release](SHARING-VALIDATION.md).
+Esta alteração foi implementada e validada por testes automatizados sobre o código da 1.24. Uma chave aleatória nova foi autorizada e gerada localmente para a versão 1.25. O APK assinado foi gerado e validado, com os resultados descritos abaixo. Essa assinatura não permite atualizar a instalação 1.24. Somente a senha tem guarda e recuperação verificadas no Space do proprietário. A chave privada continua apenas local, sem backup durável verificado; guardar a senha não equivale a ter uma cópia da chave. O proprietário pediu publicar a primeira pré-release mesmo com essa limitação. Isso não garante futuras atualizações nem autoriza remover a instalação atual. A Release 1.24 deve continuar intacta e como Latest. A publicação deve ser uma pré-release de migração, fora do Latest. Veja [a validação e as pendências da transição](SHARING-VALIDATION.md).
 
 ## Configurações
 
@@ -96,7 +100,9 @@ O APK validado será copiado para `build/ShakeRecorder.apk`, acompanhado de `bui
 
 ### Atualização sem perder dados
 
-O pacote continua sendo `com.shakerecorder`, com as mesmas preferências e pasta de gravações. O Android só aceita atualizar por cima quando o APK novo usa o mesmo certificado do instalado. A versão 1.23 utilizou uma chave de depuração existente; os novos builds release devem usar essa mesma chave, fornecida de forma segura, para manter a compatibilidade. O build bloqueia certificados diferentes e não cria chaves automaticamente. Uma chave nova **não** atualiza a instalação existente. Não desinstale o aplicativo para contornar um erro de assinatura.
+O pacote continua sendo `com.shakerecorder`, com os mesmos nomes de preferências e pasta de gravações. O Android só aceita atualizar por cima quando o APK novo usa o mesmo certificado do instalado. As versões 1.23 e 1.24 usaram uma chave de depuração existente que foi perdida. A nova chave autorizada inicia outra linha: só as próximas versões assinadas com essa mesma chave poderão atualizar uma instalação feita com ela. Alterar o pin de compilação não muda essa regra do Android nem migra dados.
+
+O build bloqueia certificados diferentes do pin configurado e não cria chaves automaticamente. A chave nova deverá ser preservada e sua recuperação comprovada antes de cada release futura. Não desinstale o aplicativo para contornar um erro de assinatura.
 
 O arquivo de chave e suas senhas não devem ser enviados para este repositório. A compilação em outro computador serve como candidata para validação, não comprova compatibilidade com a assinatura do APK que está no celular.
 

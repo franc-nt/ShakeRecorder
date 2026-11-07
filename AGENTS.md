@@ -74,25 +74,49 @@ GitHub Release in `franc-nt/ShakeRecorder`, tagged `v<versionName>`, containing
 `ShakeRecorder.apk` and `update.json` from the same verified build. Follow
 `RELEASING.md`. If publishing is blocked, report the blocker, not a completed release.
 
-Keep application ID `com.shakerecorder`, the same signing certificate, and the
-repository visibility unchanged. The current updater consumes public Releases;
-if the repository becomes private, obtain an approved distribution design rather
-than making it public or embedding a token. Never generate a replacement key, silently use debug signing,
-commit secrets, embed GitHub credentials, or change repository permissions.
-Persisting signing credentials requires explicit owner approval.
+Keep application ID `com.shakerecorder` and repository visibility unchanged. The
+1.24 signing key was lost. The owner authorized one random replacement key for
+the planned 1.25 signing lineage after being informed that it cannot update 1.24,
+including by manually opening the APK. This authorization does not confirm a
+durable storage destination or a verified backup. Follow the explicit migration
+gate in `RELEASING.md`; do not generate another key for later releases.
 
-Preserve this SAME signing key for every future release in durable custody at a
+The current updater consumes public Releases;
+if the repository becomes private, obtain an approved distribution design rather
+than making it public or embedding a token. Never silently replace a signing key,
+use debug signing as a fallback, commit secrets, embed GitHub credentials, or
+change repository permissions. Persisting signing credentials requires explicit
+owner approval of the destination and access after disclosure of the risks.
+
+Preserve the SAME new signing key for every release in the new lineage in durable custody at a
 destination specifically approved by the owner. Before starting each release,
 verify that the key is available and its certificate matches the pinned SHA-256;
 also validate recovery from the authorized backup without exposing key material
 or passwords. A temporary folder or build workspace is not a durable backup.
-If the original key or verified recovery is unavailable, stop delivery and report
-the blocker. Never generate a replacement or deliver an APK signed with a
-temporary key. Do not claim custody or backup is configured until it has actually
-been approved, completed, and verified.
+If that key or verified recovery is unavailable, stop delivery and report
+the blocker. One explicit exception applies only to the first new-key prerelease
+1.25: the owner requested publication while durable key custody remains pending.
+Keep that limitation prominent; it is not authorization to transmit the private
+key to an unapproved destination, nor a promise of future update continuity.
+Never generate a further replacement or use a temporary/debug fallback key. Do
+not claim custody or backup is configured until it has actually been approved,
+completed, and verified.
 
-Update in place, never uninstall/clear app data. Android's installer confirmation
-is required; do not promise silent installation. Preserve settings and recordings.
+Update in place only within a signing lineage. Never weaken
+`AppUpdater.requireCompatible` to accept a different certificate; changing the
+build pin does not migrate Android installations. Never uninstall/clear app data
+or promise that the new key preserves 1.24 settings. The app has no settings
+export/import. Keep 1.24 installed until a separate, owner-approved data-preserving
+migration plan is ready. Android's installer confirmation is required; do not
+promise silent installation.
+
+Do not expose the incompatible first release through Latest or the legacy
+updater. Preserve `v1.24` and its assets. Use an explicitly labeled prerelease
+outside Latest under the gates and the narrow custody exception in
+`RELEASING.md`. `release.sh --migration-prerelease` is required for version 1.25;
+the script rejects stable publication of that version. Later stable releases
+still require an explicit decision about legacy users consuming the same Latest
+endpoint. Do not imply they can update 1.24.
 
 ### Always use the build script
 
